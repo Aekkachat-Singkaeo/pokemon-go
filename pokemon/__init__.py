@@ -7,16 +7,24 @@ from pokemon.users.routes import users_bp
 from pokemon.pokemons.routes import pokemons_bp
 
 def create_app():
-  app = Flask(__name__)
-  app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
-  app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+    app = Flask(__name__)
 
-  db.init_app(app)
-  login_manager.init_app(app)
-  bcrypt.init_app(app)
+    # ✅ fallback ถ้าไม่ได้ตั้ง env
+    db_url = os.environ.get("DATABASE_URL") or "sqlite:///app.db"
+    secret = os.environ.get("SECRET_KEY") or "dev-secret-key"
 
-  app.register_blueprint(core_bp, url_prefix='/')
-  app.register_blueprint(users_bp, url_prefix='/users')
-  app.register_blueprint(pokemons_bp, url_prefix='/pokemons')
+    app.config["SQLALCHEMY_DATABASE_URI"] = db_url
+    app.config["SECRET_KEY"] = secret
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-  return app
+    db.init_app(app)
+    bcrypt.init_app(app)
+    login_manager.init_app(app)
+    login_manager.login_view = "users.login"
+    login_manager.login_message = "Please log in"
+
+    app.register_blueprint(core_bp, url_prefix="/")
+    app.register_blueprint(users_bp, url_prefix="/users")
+    app.register_blueprint(pokemons_bp, url_prefix="/pokemons")
+
+    return app
